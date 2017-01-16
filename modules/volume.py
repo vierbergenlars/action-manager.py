@@ -9,13 +9,6 @@ logger = logging.getLogger(__name__)
 
 
 class VolumeControl(AbstractControl):
-    def configure(self, argument_parser):
-        argument_parser.add_argument('--volume-enabled', help='Enable volume control', action='store_true')
-
-    @property
-    def enabled(self):
-        return self.args.volume_enabled
-
     @property
     def muted(self):
         return self._muted

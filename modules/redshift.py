@@ -12,7 +12,6 @@ class RedshiftControl(AbstractControl):
         self._redshift_proc = None
 
     def configure(self, argument_parser):
-        argument_parser.add_argument('--redshift-enabled', help='Use the redshift module', action='store_true')
         argument_parser.add_argument('--redshift-location', help='LAT:LON Your current location', type=str)
         argument_parser.add_argument('--redshift-temperature',
                                      help='DAY:NIGHT Color temperature to set at daytime/night', type=str)
@@ -21,10 +20,6 @@ class RedshiftControl(AbstractControl):
         super().bind_arguments(args)
         if self.enabled and not self.redshift_error_message:
             self.redshift_enabled = True
-
-    @property
-    def enabled(self):
-        return self.args.redshift_enabled
 
     @property
     def redshift_enabled(self) -> bool:

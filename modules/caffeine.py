@@ -15,12 +15,7 @@ class CaffeineControl(AbstractControl):
         self._activity_proc = None
         self._activity_proc_lastrun = 0
 
-    @property
-    def enabled(self):
-        return self.args.caffeine_enabled
-
     def configure(self, argument_parser):
-        argument_parser.add_argument('--caffeine-enabled', help='Use the caffeine module', action='store_true')
         argument_parser.add_argument('--caffeine-timeout',
                                      help='Time between user activity reports to xscreensaver (in seconds)',
                                      type=int,
