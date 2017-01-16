@@ -1,6 +1,6 @@
 import subprocess
 import logging
-
+import abc
 import math
 
 from .core import AbstractControl, action, Button
@@ -8,7 +8,15 @@ from .core import AbstractControl, action, Button
 logger = logging.getLogger(__name__)
 
 
-class VolumeControl(AbstractControl):
+class AbstractVolumeControl(AbstractControl, metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def _set_muted(self, muted: bool) -> bool:
+        pass
+
+    @abc.abstractmethod
+    def _set_volume(self, volume: float) -> bool:
+        pass
+
     @property
     def muted(self):
         return self._muted
@@ -17,11 +25,8 @@ class VolumeControl(AbstractControl):
     def muted(self, muted):
         if self._muted != muted:
             logger.info("Setting muted to %s", muted)
-            try:
+            if self._set_muted(muted):
                 self._muted = muted
-                self._pactl('set-sink-mute', str(int(muted)))
-            except subprocess.CalledProcessError as e:
-                logger.exception("Error setting mute")
 
     @property
     def volume(self):
@@ -39,19 +44,8 @@ class VolumeControl(AbstractControl):
             self.muted = False
         if self._volume != volume:
             logger.info("Setting volume to %s", volume)
-            try:
+            if self._set_volume(volume / 90000.0):
                 self._volume = volume
-                self._pactl('set-sink-volume', str(volume))
-            except subprocess.CalledProcessError as e:
-                logger.exception("Error setting volume")
-
-    def _pa_get_sinks(self):
-        return [l.split(b'\t')[0].decode() for l in subprocess.check_output(["pactl", "list", "short", "sinks"], stdin=subprocess.DEVNULL,stderr=subprocess.DEVNULL).split(b'\n') if len(l) > 0]
-
-    def _pactl(self, command, arg):
-        for i in self._pa_get_sinks():
-            logger.debug("Calling pactl: %s %s %s", command, i, arg)
-            subprocess.check_call(["pactl", command, i, arg], stdin=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     def __init__(self):
         super().__init__()
@@ -103,7 +97,7 @@ class VolumeControl(AbstractControl):
 def create_bars(volume):
     num_bars = float(volume) / 9000.0
     return ('/' * math.floor(num_bars)) + partial_bar(num_bars - math.floor(num_bars)) + (
-    ' ' * (10 - math.ceil(num_bars)))
+        ' ' * (10 - math.ceil(num_bars)))
 
 
 def partial_bar(bar_size):
@@ -116,3 +110,32 @@ def partial_bar(bar_size):
     elif bar_size < 0.9:
         return '-'
     return '/'
+
+
+class PaCtlVolumeControl(AbstractVolumeControl):
+    def _set_volume(self, volume: float) -> bool:
+        try:
+            self._pactl('set-sink-volume', str(int(volume*90000)))
+            return True
+        except subprocess.CalledProcessError:
+            logger.exception("Error setting volume")
+            return False
+
+    def _set_muted(self, muted: bool) -> bool:
+        try:
+            self._pactl('set-sink-mute', str(int(muted)))
+            return True
+        except subprocess.CalledProcessError:
+            logger.exception("Error setting mute")
+            return False
+
+    def _pa_get_sinks(self):
+        return [l.split(b'\t')[0].decode() for l in
+                subprocess.check_output(["pactl", "list", "short", "sinks"], stdin=subprocess.DEVNULL,
+                                        stderr=subprocess.DEVNULL).split(b'\n') if len(l) > 0]
+
+    def _pactl(self, command, arg):
+        for i in self._pa_get_sinks():
+            logger.debug("Calling pactl: %s %s %s", command, i, arg)
+            subprocess.check_call(["pactl", command, i, arg], stdin=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
