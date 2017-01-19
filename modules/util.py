@@ -1,5 +1,9 @@
 import sys
 import os.path
+from functools import wraps
+
+import time
+
 from .core import AbstractControl
 
 
@@ -26,3 +30,36 @@ class ChildReaperControl(AbstractControl):
         except:
             pass
 
+
+def backoff(backoff, default=None):
+    def decorator(fn):
+        last_called = 0
+
+        @wraps(fn)
+        def wrapper(*a, **kw):
+            nonlocal last_called
+            if last_called + backoff > time.time():
+                return default
+            last_called = time.time()
+            return fn(*a, **kw)
+
+        return wrapper
+
+    return decorator
+
+
+def process_reaper(fn):
+    process = None
+
+    @wraps(fn)
+    def wrapper(*a, **kw):
+        nonlocal process
+        if process is not None:
+            process.poll()
+            if process.returncode is not None:
+                process = None
+
+        if process is None:
+            process = fn(*a, **kw)
+
+    return wrapper
