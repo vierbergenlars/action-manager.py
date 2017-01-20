@@ -30,22 +30,22 @@ class AbstractVolumeControl(AbstractControl, metaclass=abc.ABCMeta):
 
     @property
     def volume(self):
-        return self._volume
+        return self._volume / 90000.0
 
     @volume.setter
     def volume(self, volume):
         if volume < 0:
             logger.warning("Cannot set volume to %d, clamping to zero", volume)
             volume = 0
-        if volume > 90000:
-            logger.warning("Cannot set volume to %d, clamping to 90000", volume)
-            volume = 90000
+        if volume > 1.0:
+            logger.warning("Cannot set volume to %d, clamping to one", volume)
+            volume = 1.0
         if self.muted:
             self.muted = False
-        if self._volume != volume:
+        if int(self._volume) != int(volume*90000):
             logger.info("Setting volume to %s", volume)
-            if self._set_volume(volume / 90000.0):
-                self._volume = volume
+            if self._set_volume(volume):
+                self._volume = int(volume*90000)
 
     def __init__(self):
         super().__init__()
@@ -54,7 +54,7 @@ class AbstractVolumeControl(AbstractControl, metaclass=abc.ABCMeta):
 
     def respond_to(self, command):
         if command[0] == '=':
-            self.volume = int(command[1:]) * 9000
+            self.volume = int(command[1:])/10.0
         elif command == 'm1':
             self.muted = True
         elif command == 'm0':
@@ -62,11 +62,11 @@ class AbstractVolumeControl(AbstractControl, metaclass=abc.ABCMeta):
         elif command == 'mt':
             self.muted = not self.muted
         elif command == '+':
-            self.volume += 3000
+            self.volume += 1/30.0
         elif command == '-':
-            self.volume -= 3000
+            self.volume -= 1/30.0
         elif command == 'r':
-            self.volume = 30000
+            self.volume = 1/3.0
         else:
             return False
         return True
@@ -76,7 +76,7 @@ class AbstractVolumeControl(AbstractControl, metaclass=abc.ABCMeta):
             self.create_pipe_command('+'),
             action(
                 self.create_pipe_command('-'),
-                self.action_bars(create_bars(self.volume) if not self.muted else '  (mute)  '),
+                self.action_bars(create_bars(self._volume) if not self.muted else '  (mute)  '),
                 button=Button.SCROLL_DOWN
             ),
             button=Button.SCROLL_UP
