@@ -283,7 +283,7 @@ class WrappingControl(AbstractControl):
         return self.child.visible
 
     def periodic(self):
-        self.child.periodic()
+        return self.child.periodic()
 
     def load_state_ex(self, state):
         self.child.load_state_ex(state)

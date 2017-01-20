@@ -12,7 +12,7 @@ modules.Application(
         separator=''
     ),
     modules.ActionWrapperControl(
-        modules.PaCtlVolumeControl(),
+        modules.PulseCtlVolumeControl(),
         action='pavucontrol',
         buttons=modules.core.Button.RIGHT
     ),

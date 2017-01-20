@@ -139,3 +139,37 @@ class PaCtlVolumeControl(AbstractVolumeControl):
             logger.debug("Calling pactl: %s %s %s", command, i, arg)
             subprocess.check_call(["pactl", command, i, arg], stdin=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
+
+try:
+    import pulsectl
+
+    class PulseCtlVolumeControl(AbstractVolumeControl):
+        def __init__(self):
+            super().__init__()
+            self.__pulse = pulsectl.Pulse(self.__class__.__name__)
+            self.__default_sink = None
+            self.periodic()
+
+        def periodic(self):
+            server_info = self.__pulse.server_info()
+            self.__default_sink = next(filter(lambda sink: sink.name == server_info.default_sink_name, self.__pulse.sink_list()))
+            prev_muted = self.muted
+            self.muted = bool(self.__default_sink.mute)
+            prev_volume = self.volume
+            if not self.muted:
+                self.volume = self.__default_sink.volume.value_flat
+            return prev_muted != self.muted or prev_volume != self.volume
+
+        def _set_muted(self, muted: bool) -> bool:
+            self.__pulse.sink_mute(self.__default_sink.index, muted)
+            return True
+
+        def _set_volume(self, volume: float) -> bool:
+            self.__default_sink.volume.value_flat = volume
+            self.__pulse.sink_volume_set(self.__default_sink.index, self.__default_sink.volume)
+            return True
+
+
+    VolumeControl = PulseCtlVolumeControl
+except ImportError:
+    VolumeControl = PaCtlVolumeControl
