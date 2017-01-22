@@ -129,15 +129,10 @@ class PaCtlVolumeControl(AbstractVolumeControl):
             logger.exception("Error setting mute")
             return False
 
-    def _pa_get_sinks(self):
-        return [l.split(b'\t')[0].decode() for l in
-                subprocess.check_output(["pactl", "list", "short", "sinks"], stdin=subprocess.DEVNULL,
-                                        stderr=subprocess.DEVNULL).split(b'\n') if len(l) > 0]
-
     def _pactl(self, command, arg):
-        for i in self._pa_get_sinks():
-            logger.debug("Calling pactl: %s %s %s", command, i, arg)
-            subprocess.check_call(["pactl", command, i, arg], stdin=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        logger.debug("Calling pactl: %s %s %s", command, '@DEFAULT_SINK@', arg)
+        subprocess.check_call(["pactl", command, '@DEFAULT_SINK@', arg], stdin=subprocess.DEVNULL,
+                              stderr=subprocess.DEVNULL)
 
 
 try:
