@@ -2,15 +2,15 @@ import subprocess
 import logging
 
 
-from modules.toggle import ToggleAction, ToggleControl
+from .toggle import ToggleControl
 from .util import process_reaper, backoff
 
 logger = logging.getLogger(__name__)
 
 
-class CaffeineToggleAction(ToggleAction):
-    def __init__(self):
-        super().__init__(False)
+class CaffeineControl(ToggleControl):
+    def __init__(self, letter: str = 'c'):
+        super().__init__(letter, False)
 
     def configure(self, argument_parser):
         argument_parser.add_argument('--caffeine-timeout',
@@ -28,7 +28,3 @@ class CaffeineToggleAction(ToggleAction):
             return subprocess.Popen(['xscreensaver-command', '-deactivate'],
                                     stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                                     stderr=subprocess.DEVNULL)
-
-
-def CaffeineControl():
-    return ToggleControl('c', CaffeineToggleAction())
