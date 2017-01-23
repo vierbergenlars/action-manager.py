@@ -19,6 +19,7 @@ class AbstractControl(metaclass=abc.ABCMeta):
         Creates a new control
         """
         self.args = None
+        self.__name = None
 
     @property
     def visible(self):
@@ -94,6 +95,31 @@ class AbstractControl(metaclass=abc.ABCMeta):
         """
         return False
 
+    def respond_to_ex(self, command: str):
+        """
+        Responds to a non-cleaned user command
+
+        Namespaced commands still contain the namespace of this class, which has to be
+        removed from the command before it is passed on to respond_to()
+
+        :param command: The uncleaned command from the user
+        :return: bool Whether the displayed information is changed by the executed operations.
+        """
+        logger.debug('%s.respond_to_ex: %s', self.__class__.__name__, command)
+        if command[0] == ':':
+            split_command = command.split(':', 2)
+            if len(split_command) == 3:
+                if split_command[1] != self.get_namespace():
+                    logger.error('%s.respond_to_ex: Unsollicited command (mismatch %s <-> %s)', self.__class__.__name__, split_command[1], self.get_namespace())
+                    return False
+                command = ':' + split_command[2]
+                logger.debug('%s.respond_to: %s', self.__class__.__name__, command)
+                return self.respond_to(command)
+            logger.warning('%s.respond_to_ex: Could not split into full command.', self.__class__.__name__)
+        else:
+            logger.debug('%s.respond_to: %s', self.__class__.__name__, command)
+            return self.respond_to(command)
+
     def __str__(self):
         """
         Creates the string representation of the module to show on the action bar
@@ -153,6 +179,32 @@ class AbstractControl(metaclass=abc.ABCMeta):
         """
         return {self.__class__.__name__: self.dump_state()}
 
+    def get_namespace(self):
+        """
+        :return: The class-specific part of the namespace to use for namespaced commands. It cannot contain colons
+        """
+        return self.__class__.__name__
+
+    def set_name(self, name: str):
+        """
+        Sets the namespace to use for namespaced commands
+
+        This method may be overridden to customize the namespace used for the class
+        It must call parent().set_name() with the desired name
+        :param name: The namespace to use for namespaced commands
+        """
+        self.__name = name
+        logger.debug('%s.set_name: Set name to %s', self.__class__.__name__, name)
+
+    def set_name_ex(self, name: str):
+        """
+        Sets the namespace to use for namespaced commands
+
+        This method must not be overridden
+        :param name: Namespace used by the object one up the hierarchy
+        """
+        self.set_name('%s:%s' % (name, self.get_namespace()))
+
     def create_pipe_command(self, command: str):
         """
         Creates a shell command that will pass :command to the daemon through the controlpipe
@@ -160,6 +212,8 @@ class AbstractControl(metaclass=abc.ABCMeta):
         :param command: The command to pass
         :return: str Shell command that will pass the given command through the controlpipe
         """
+        if command[0] == ':':
+            command = self.__name + command
         return '{}/command.sh {} {}'.format(os.path.abspath(sys.path[0]), command,
                                             os.path.abspath(self.args.command_pipe.name))
 
@@ -202,7 +256,12 @@ class GroupedControl(AbstractControl):
         [m.cleanup() for m in self.__modules if m.enabled]
 
     def respond_to(self, command):
-        return any([m.respond_to(command) for m in self.__modules if m.enabled])
+        if command[0] != ':':
+            return any([m.respond_to(command) for m in self.__modules if m.enabled])
+        split_command = command.split(':', maxsplit=2)
+        if len(split_command) == 3:
+            index = int(split_command[1])
+            return self.__modules[index].respond_to_ex(':' + split_command[2])
 
     def periodic(self):
         return any([m.periodic() for m in self.__modules if m.enabled])
@@ -213,6 +272,10 @@ class GroupedControl(AbstractControl):
             if m.enabled:
                 data.update(m.dump_state_ex())
         return data
+
+    def set_name(self, name: str):
+        super().set_name(name)
+        [m.set_name_ex('%s:%d' % (name, i)) for i, m in enumerate(self.__modules)]
 
     def __passthrough_log(self, fn, s):
         logger.debug('%s.%s(): %s', self.__class__.__name__, fn, s)
@@ -262,7 +325,7 @@ class WrappingControl(AbstractControl):
         self.child.load_state(state)
 
     def respond_to(self, command):
-        return self.child.respond_to(command)
+        return self.child.respond_to_ex(command)
 
     @property
     def enabled(self):
@@ -287,6 +350,10 @@ class WrappingControl(AbstractControl):
 
     def load_state_ex(self, state):
         self.child.load_state_ex(state)
+
+    def set_name(self, name: str):
+        super().set_name(name)
+        self.child.set_name_ex(name)
 
     def __str__(self):
         return self.child.__str__()

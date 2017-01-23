@@ -1,6 +1,5 @@
 from .core import AbstractControl, WrappingControl, action
 import abc
-import functools
 
 
 class ToggleAction(AbstractControl, metaclass=abc.ABCMeta):
@@ -46,16 +45,13 @@ class ToggleControl(WrappingControl):
         super().__init__(toggle_action)
         self.__letter = letter
 
-    def __get_control_command(self):
-        return '%s:%s:%s' % (self.__class__.__name__, self.__letter, self.child.__class__.__name__)
-
     def respond_to(self, command):
-        if command == self.__get_control_command():
+        if command == ':toggle':
             self.child.toggle()
             return True
 
     def __str__(self):
         return action(
-            self.create_pipe_command(self.__get_control_command()),
+            self.create_pipe_command(':toggle'),
             self.__letter.upper() if self.child.state else self.__letter.lower()
         )

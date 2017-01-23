@@ -121,11 +121,11 @@ class Application(GroupedControl):
 
         super().cleanup()
 
-    def respond_to(self, command):
+    def respond_to_ex(self, command):
         if command == '':
             return False
         logger.info('Received command %s', command)
-        return super().respond_to(command)
+        return super().respond_to_ex(command)
 
     def handle_signal(self, signal, tb):
         raise Exception("Received signal %s"%signal)
@@ -134,6 +134,7 @@ class Application(GroupedControl):
     def run(self):
         parser = argparse.ArgumentParser(description='Action manager for xmobar')
 
+        self.set_name_ex('')
         self.configure(parser)
         self.bind_arguments(parser.parse_args())
 
@@ -143,7 +144,7 @@ class Application(GroupedControl):
         try:
             self.args.output_pipe.writelines(str(self)+"\n")
             while True:
-                if self.respond_to(str.rstrip(self.args.command_pipe.readline())) or self.periodic():
+                if self.respond_to_ex(str.rstrip(self.args.command_pipe.readline())) or self.periodic():
                     self.args.output_pipe.writelines(str(self) + "\n")
                 else:
                     time.sleep(1)
