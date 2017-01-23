@@ -54,7 +54,7 @@ class RedshiftControl(AbstractControl):
                 return True
 
     def respond_to(self, command):
-        if command == 'redshift':
+        if command == ':redshift':
             self.redshift_enabled = not self.redshift_enabled
             return True
         return False
@@ -66,7 +66,7 @@ class RedshiftControl(AbstractControl):
 
     def __str__(self):
         if not self.redshift_error_message:
-            return action(self.create_pipe_command('redshift'), 'R' if self.redshift_enabled else 'r')
+            return action(self.create_pipe_command(':redshift'), 'R' if self.redshift_enabled else 'r')
         return 'E: ' + self.redshift_error_message
 
     def load_state(self, state):
