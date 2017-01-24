@@ -109,7 +109,7 @@ class Application(GroupedControl):
                 logger.info("Loaded state: %r" % state)
                 self.load_state_ex(state)
             except:
-                traceback.print_exc()
+                logger.exception('Could not load state')
 
     def cleanup(self):
         if self.args.state_file is not None:
