@@ -2,6 +2,7 @@ import abc
 
 from .core import AbstractControl, action
 
+__all__ = ['ToggleControl']
 
 class ToggleControl(AbstractControl, metaclass=abc.ABCMeta):
     """

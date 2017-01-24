@@ -1,9 +1,10 @@
 import subprocess
 import logging
 
-
 from .toggle import ToggleControl
 from .util import process_reaper, backoff
+
+__all__ = ['CaffeineControl']
 
 logger = logging.getLogger(__name__)
 

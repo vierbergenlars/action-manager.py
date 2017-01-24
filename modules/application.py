@@ -13,6 +13,7 @@ import stat
 
 logger = logging.getLogger(__name__)
 
+__all__ = ['Application']
 
 class CreateFileType(argparse.FileType):
     def __init__(self, mode='r', bufsize=-1, encoding=None, errors=None):

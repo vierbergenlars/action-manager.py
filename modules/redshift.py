@@ -5,6 +5,7 @@ from .core import AbstractControl, action
 
 logger = logging.getLogger(__name__)
 
+__all__ = ['RedshiftControl']
 
 class RedshiftControl(AbstractControl):
     def __init__(self):

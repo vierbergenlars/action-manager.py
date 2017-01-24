@@ -7,6 +7,8 @@ from .core import AbstractControl, action, Button
 
 logger = logging.getLogger(__name__)
 
+__all__ = ['AbstractControl', 'PaCtlVolumeControl', 'VolumeControl']
+
 
 class AbstractVolumeControl(AbstractControl, metaclass=abc.ABCMeta):
     @abc.abstractmethod

@@ -6,6 +6,7 @@ import time
 
 from .core import AbstractControl
 
+__all__ = ['ChildReaperControl', 'QuitControl', 'backoff', 'process_reaper']
 
 class QuitControl(AbstractControl):
     @property
