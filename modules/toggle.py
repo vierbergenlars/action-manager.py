@@ -1,8 +1,12 @@
 import abc
 
+import subprocess
+
+from modules.util import process_reaper
 from .core import AbstractControl, action
 
-__all__ = ['ToggleControl']
+__all__ = ['ToggleControl', 'CommandToggleControl']
+
 
 class ToggleControl(AbstractControl, metaclass=abc.ABCMeta):
     """
@@ -75,3 +79,17 @@ class ToggleControl(AbstractControl, metaclass=abc.ABCMeta):
             self.create_pipe_command(':toggle'),
             self.__letter.upper() if self.state else self.__letter.lower()
         )
+
+
+class CommandToggleControl(ToggleControl):
+    def __init__(self, letter: str, enable_command: list, disable_command: list, initial_state: bool = False):
+        super().__init__(letter, initial_state)
+        self.__enable_command = enable_command
+        self.__disable_command = disable_command
+
+    def enable(self):
+        subprocess.call(self.__enable_command)
+
+    def disable(self):
+        subprocess.call(self.__disable_command)
+
