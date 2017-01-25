@@ -128,7 +128,7 @@ class PulseCtlDefaultSinkCycleAction(OrderedDictCycleAction):
             self.__od[sink.name] = sink
         to_delete = []
         for k, sink in self.__od.items():
-            if sink not in sinks:
+            if len(list(filter(lambda s: s.name == sink.name, sinks))) == 0:  # Sink from dict not in sinks list
                 logger.debug('%s.__update_items: Removed sink %r', self.__class__.__name__, sink)
                 to_delete.append(k)
                 changed = True
@@ -137,6 +137,7 @@ class PulseCtlDefaultSinkCycleAction(OrderedDictCycleAction):
 
         default_name = self.__pulse.server_info().default_sink_name
         if self.current != default_name:
+            logger.debug('%.__update_items: Updated default sink from %s to %s', self.__class__.__name__, self.current, default_name)
             self.current = default_name
             changed = True
         return changed
