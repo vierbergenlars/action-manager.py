@@ -15,6 +15,7 @@ class ToggleControl(AbstractControl, metaclass=abc.ABCMeta):
     The toggle button will show a text in upper or lower case, depending on the activation state of the button.
     A click on the button toggles the button by calling toggle()
     """
+
     def __init__(self, letter: str, initial_state: bool = False):
         """
         :param letter: The text to show on the toggle control. Will be upper- or lowercased when the button is activated or deactivated.

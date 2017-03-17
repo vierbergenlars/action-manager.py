@@ -44,10 +44,10 @@ class AbstractVolumeControl(AbstractControl, metaclass=abc.ABCMeta):
             volume = 1.0
         if self.muted:
             self.muted = False
-        if int(self._volume) != int(volume*90000):
+        if int(self._volume) != int(volume * 90000):
             logger.info("Setting volume to %s", volume)
             if self._set_volume(volume):
-                self._volume = int(volume*90000)
+                self._volume = int(volume * 90000)
 
     def __init__(self):
         super().__init__()
@@ -56,7 +56,7 @@ class AbstractVolumeControl(AbstractControl, metaclass=abc.ABCMeta):
 
     def respond_to(self, command):
         if command[0] == '=':
-            self.volume = int(command[1:])/10.0
+            self.volume = int(command[1:]) / 10.0
         elif command == 'm1':
             self.muted = True
         elif command == 'm0':
@@ -64,11 +64,11 @@ class AbstractVolumeControl(AbstractControl, metaclass=abc.ABCMeta):
         elif command == 'mt':
             self.muted = not self.muted
         elif command == '+':
-            self.volume += 1/30.0
+            self.volume += 1 / 30.0
         elif command == '-':
-            self.volume -= 1/30.0
+            self.volume -= 1 / 30.0
         elif command == 'r':
-            self.volume = 1/3.0
+            self.volume = 1 / 3.0
         else:
             return False
         return True
@@ -117,7 +117,7 @@ def partial_bar(bar_size):
 class PaCtlVolumeControl(AbstractVolumeControl):
     def _set_volume(self, volume: float) -> bool:
         try:
-            self._pactl('set-sink-volume', str(int(volume*90000)))
+            self._pactl('set-sink-volume', str(int(volume * 90000)))
             return True
         except subprocess.CalledProcessError:
             logger.exception("Error setting volume")
@@ -140,6 +140,7 @@ class PaCtlVolumeControl(AbstractVolumeControl):
 try:
     import pulsectl
 
+
     class PulseCtlVolumeControl(AbstractVolumeControl):
         def __init__(self):
             super().__init__()
@@ -149,7 +150,8 @@ try:
 
         def periodic(self):
             server_info = self.__pulse.server_info()
-            self.__default_sink = next(filter(lambda sink: sink.name == server_info.default_sink_name, self.__pulse.sink_list()))
+            self.__default_sink = next(
+                filter(lambda sink: sink.name == server_info.default_sink_name, self.__pulse.sink_list()))
             prev_muted = self.muted
             self.muted = bool(self.__default_sink.mute)
             prev_volume = self.volume
