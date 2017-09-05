@@ -35,11 +35,11 @@ modules.Application(
                 sink_input_filter=sink_input_filter.connected_sink
             ),
         ),
-        modules.ActionWrapperControl(
-            CommandToggleControl('eq', ['pactl', 'load-module', 'module-equalizer-sink'], ['pactl', 'unload-module', 'module-equalizer-sink']),
-            action='qpaeq',
-            buttons=modules.core.Button.RIGHT
-        ),
+#        modules.ActionWrapperControl(
+#            CommandToggleControl('eq', ['pactl', 'load-module', 'module-equalizer-sink'], ['pactl', 'unload-module', 'module-equalizer-sink']),
+#            action='qpaeq',
+#            buttons=modules.core.Button.RIGHT
+#        ),
         modules.ActionWrapperControl(
             modules.VolumeControl(),
             action='pavucontrol',
