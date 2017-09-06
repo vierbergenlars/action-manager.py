@@ -109,8 +109,9 @@ class CycleControl(WrappingControl):
     When clicked or scrolled over it changes to the previous/next value in a circular fashion.
     """
 
-    def __init__(self, cycle_action: AbstractCycleAction):
+    def __init__(self, cycle_action: AbstractCycleAction, scroll_actions=True):
         super().__init__(cycle_action)
+        self.__scroll_actions = scroll_actions
 
     def respond_to(self, command: str):
         if command == ':next':
@@ -121,12 +122,17 @@ class CycleControl(WrappingControl):
             return True
 
     def __str__(self):
+        next_button = Button.LEFT
+        prev_button = Button.RIGHT
+        if self.__scroll_actions:
+            next_button |= Button.SCROLL_UP
+            prev_button |= Button.SCROLL_DOWN
         return action(
             command=self.create_pipe_command(':next'),
-            button=Button.LEFT | Button.SCROLL_UP,
+            button=next_button,
             text=action(
                 command=self.create_pipe_command(':prev'),
-                button=Button.RIGHT | Button.SCROLL_DOWN,
+                button=prev_button,
                 text=str(self.child)
             )
         )

@@ -4,15 +4,15 @@ import modules
 import modules.core
 from modules.audiooutput import PulseCtlDefaultSinkCycleAction
 from modules.audiooutput import naming_map, sink_filter, sink_input_filter
-from modules.cycle import *
+from modules.cycle import CycleControl
 from modules.toggle import CommandToggleControl
-from modules.screenlayout import ScreenLayoutCycleAction
+from modules.functional import *
 
 logging.basicConfig(level=logging.DEBUG)
 logging.getLogger('modules.core').setLevel(logging.WARNING)
 
 modules.Application(
-    CycleControl(ScreenLayoutCycleAction()),
+    CycleControl(modules.ScreenLayoutCycleAction(name=partial(drop_from, '.')), scroll_actions=False),
     modules.GroupedControl(
         modules.CaffeineControl(),
         modules.RedshiftControl(),
@@ -21,14 +21,14 @@ modules.Application(
     modules.GroupedControl(
         CycleControl(
             PulseCtlDefaultSinkCycleAction(
-                naming_map=naming_map.partial(
-                    naming_map.foldr, [
+                naming_map=partial(
+                    foldr, [
                         naming_map.description,
-                        naming_map.partial(
-                            naming_map.drop_kwargs,
-                            naming_map.partial(naming_map.foldr, [
-                                naming_map.partial(naming_map.drop_first_if_eq, 'Built-in Audio '),
-                                naming_map.first_char
+                        partial(
+                            drop_kwargs,
+                            partial(foldr, [
+                                partial(drop_first_if_eq, 'Built-in Audio '),
+                                first_char
                             ])
                         )
                     ]

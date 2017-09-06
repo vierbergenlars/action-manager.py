@@ -9,10 +9,11 @@ import argparse
 logger = logging.getLogger(__name__)
 
 class ScreenLayoutCycleAction(OrderedDictCycleAction):
-    def __init__(self):
+    def __init__(self, name: callable):
         self.__od = OrderedDict()
         super().__init__(self.__od)
         self.__inhibited = True
+        self.__naming_func = name
 
     def configure(self, argument_parser: argparse.ArgumentParser):
         argument_parser.add_argument('--screenlayout-dir', help='Directory containing screenlayout shell files.', type=str)
@@ -39,6 +40,9 @@ class ScreenLayoutCycleAction(OrderedDictCycleAction):
             self.__set_screen_layout(next_layout=self.next)
             return True
         return False
+
+    def __str__(self):
+        return self.__naming_func(super().__str__())
 
     def __load_layouts(self, directory):
         entries = os.scandir(directory)
