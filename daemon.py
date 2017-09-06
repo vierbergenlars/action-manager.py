@@ -6,11 +6,13 @@ from modules.audiooutput import PulseCtlDefaultSinkCycleAction
 from modules.audiooutput import naming_map, sink_filter, sink_input_filter
 from modules.cycle import *
 from modules.toggle import CommandToggleControl
+from modules.screenlayout import ScreenLayoutCycleAction
 
 logging.basicConfig(level=logging.DEBUG)
 logging.getLogger('modules.core').setLevel(logging.WARNING)
 
 modules.Application(
+    CycleControl(ScreenLayoutCycleAction()),
     modules.GroupedControl(
         modules.CaffeineControl(),
         modules.RedshiftControl(),
