@@ -120,6 +120,8 @@ class CycleControl(WrappingControl):
         elif command == ':prev':
             self.child.prev()
             return True
+        else:
+            return super().respond_to(command)
 
     def __str__(self):
         next_button = Button.LEFT

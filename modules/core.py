@@ -327,6 +327,7 @@ class WrappingControl(AbstractControl):
         self.child.load_state(state)
 
     def respond_to(self, command):
+        logging.debug('%s.respond_to: Passing command "%s" to child', self.__class__.__name__, command)
         return self.child.respond_to_ex(command)
 
     @property

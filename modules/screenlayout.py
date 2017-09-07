@@ -41,6 +41,13 @@ class ScreenLayoutCycleAction(OrderedDictCycleAction):
             return True
         return False
 
+    def respond_to(self, command: str):
+        if command == 'screenlayout':
+            self.next()
+            return True
+        else:
+            return super().respond_to(command)
+
     def __str__(self):
         return self.__naming_func(super().__str__())
 
