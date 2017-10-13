@@ -9,10 +9,10 @@ from modules.toggle import CommandToggleControl
 from modules.functional import *
 
 logging.basicConfig(level=logging.DEBUG)
-logging.getLogger('modules.core').setLevel(logging.WARNING)
+#logging.getLogger('modules.core').setLevel(logging.WARNING)
 
 modules.Application(
-    CycleControl(modules.ScreenLayoutCycleAction(name=partial(drop_from, '.')), scroll_actions=False),
+    modules.ScreenLayoutAction(name=partial(drop_from, '.')),
     modules.GroupedControl(
         modules.CaffeineControl(),
         modules.RedshiftControl(),

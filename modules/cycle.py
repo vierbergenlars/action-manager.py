@@ -94,12 +94,22 @@ class OrderedDictCycleAction(AbstractCycleAction):
         for k in self.__items.keys():
             return k
 
+    @current.setter
+    def current(self, value):
+        if value not in self.__items.keys():
+            raise ValueError("The given value is not a valid item")
+        while self.current != value:
+            self.__items.move_to_end(self.current)
+
     @property
     def visible(self):
         return len(self.__items) > 1
 
     def __str__(self):
         return self.__items[self.current]
+
+    def __len__(self):
+        return len(self.__items)
 
 
 class CycleControl(WrappingControl):

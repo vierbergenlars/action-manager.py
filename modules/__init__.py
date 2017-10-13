@@ -3,4 +3,4 @@ from .core import GroupedControl, ActionWrapperControl
 from .caffeine import CaffeineControl
 from .redshift import RedshiftControl
 from .volume import VolumeControl
-from .screenlayout import ScreenLayoutCycleAction
+from .screenlayout import ScreenLayoutAction
