@@ -20,6 +20,47 @@ logger = logging.getLogger(__name__)
 
 MAX_ITEMS_BEFORE_POPUP=3
 
+try:
+    import pyinotify
+    logger.info('Inotify support enabled')
+    class InotifyEventHandler(pyinotify.ProcessEvent):
+        def my_init(self, action: callable):
+            self.__action = action
+
+        def process_default(self, event):
+            logger.debug('Inotify received event.')
+            self.__action()
+
+    class Inotify:
+        def __init__(self, directory, action):
+            self.__directory = directory
+            self.__wm = pyinotify.WatchManager()
+            self.__notifier = pyinotify.ThreadedNotifier(self.__wm, default_proc_fun=InotifyEventHandler(action=action))
+            self.__wd = None
+
+        def start(self):
+            self.__notifier.start()
+            self.__wd = self.__wm.add_watch(self.__directory, pyinotify.IN_DELETE|pyinotify.IN_CREATE)[self.__directory]
+            logger.debug('Added inotify watcher for %s', self.__directory)
+
+        def stop(self):
+            self.__wm.del_watch(self.__wd)
+            self.__notifier.stop()
+            logger.debug('Removed inotify watcher for %s', self.__directory)
+
+except ImportError:
+    logger.warn('pyinotify is not available, inotify support disabled')
+    class Inotify:
+        def __init__(self, *a, **k):
+            pass
+
+        def start(self):
+            pass
+
+        def stop(self):
+            pass
+
+
 class ScreenLayoutAction(WrappingControl):
     def __init__(self, *a, **k):
         self.__screen_layout_cycle = ScreenLayoutCycleAction(*a, **k)
@@ -43,6 +84,7 @@ class ScreenLayoutCycleAction(OrderedDictCycleAction):
         self.__inhibited = True
         self.__naming_func = name
         self.__default_layout = None
+        self.__inotify = None
 
     def configure(self, argument_parser: argparse.ArgumentParser):
         argument_parser.add_argument('--screenlayout-dir', help='Directory containing screenlayout shell files.', type=str)
@@ -55,6 +97,8 @@ class ScreenLayoutCycleAction(OrderedDictCycleAction):
     def bind_arguments(self, args):
         super().bind_arguments(args)
         self.__load_layouts(args.screenlayout_dir)
+        self.__inotify = Inotify(args.screenlayout_dir, lambda: self.__load_layouts(args.screenlayout_dir))
+        self.__inotify.start()
         if args.screenlayout_default:
             layout_dir = Path(args.screenlayout_dir)
             layout_default = layout_dir / args.screenlayout_default
@@ -63,6 +107,9 @@ class ScreenLayoutCycleAction(OrderedDictCycleAction):
             else:
                 self.__default_layout = str(layout_default)
 
+    def cleanup(self):
+        if self.__inotify:
+            self.__inotify.stop()
 
     def next(self):
         super().next()
