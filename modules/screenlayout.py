@@ -14,6 +14,7 @@ except ImportError:
 import math
 import threading
 import re
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -41,9 +42,11 @@ class ScreenLayoutCycleAction(OrderedDictCycleAction):
         super().__init__(self.__od)
         self.__inhibited = True
         self.__naming_func = name
+        self.__default_layout = None
 
     def configure(self, argument_parser: argparse.ArgumentParser):
         argument_parser.add_argument('--screenlayout-dir', help='Directory containing screenlayout shell files.', type=str)
+        argument_parser.add_argument('--screenlayout-default', help='Default screenlayout shell file basename', type=str)
 
     @property
     def enabled(self):
@@ -52,6 +55,14 @@ class ScreenLayoutCycleAction(OrderedDictCycleAction):
     def bind_arguments(self, args):
         super().bind_arguments(args)
         self.__load_layouts(args.screenlayout_dir)
+        if args.screenlayout_default:
+            layout_dir = Path(args.screenlayout_dir)
+            layout_default = layout_dir / args.screenlayout_default
+            if not layout_default.exists():
+                logger.error('Default layout %s does not exist in directory %s. Continuing without default', args.screenlayout_default, args.screenlayout_dir)
+            else:
+                self.__default_layout = str(layout_default)
+
 
     def next(self):
         super().next()
@@ -75,6 +86,13 @@ class ScreenLayoutCycleAction(OrderedDictCycleAction):
             else:
                 self.next()
             return True
+        elif command == 'screenlayout-reset':
+            if not self.__default_layout:
+                logger.error('Default layout is not set. Cannot reset layout')
+                return False
+            self.__inhibited = False
+            self.__set_screen_layout(next_layout=lambda: None, item=self.__default_layout)
+            return True
         else:
             return super().respond_to(command)
 
@@ -96,11 +114,17 @@ class ScreenLayoutCycleAction(OrderedDictCycleAction):
             logger.info('Screen layout is inhibited.')
             return
         logger.info('Starting screenlayout %s', item)
-        layout_proc = subprocess.Popen([item])
-        self.current = item
-        if layout_proc.wait():
-            logger.warning('Screenlayout failed, continueing to next layout.')
+        try:
+            layout_proc = subprocess.Popen([item])
+            self.current = item
+            if layout_proc.wait():
+                logger.warning('Screenlayout failed, continueing to next layout.')
+                next_layout()
+        except Exception:
+            logger.exception('Screenlayout failed. Continueing to next layout')
             next_layout()
+
+
 
     def __create_tk(self):
         options = list(self.__od.keys())[1:] # Skip the first option, it is the current one
