@@ -113,10 +113,12 @@ class ScreenLayoutCycleAction(OrderedDictCycleAction):
 
     def next(self):
         super().next()
+        logger.info("Setting screen layout to %s", self.current)
         self.__set_screen_layout(next_layout=self.next, item=self.current)
     
     def prev(self):
         super().prev()
+        logger.info("Setting screen layout to %s", self.current)
         self.__set_screen_layout(next_layout=self.prev, item=self.current)
     
     def periodic(self):
@@ -138,7 +140,7 @@ class ScreenLayoutCycleAction(OrderedDictCycleAction):
                 logger.error('Default layout is not set. Cannot reset layout')
                 return False
             self.__inhibited = False
-            self.__set_screen_layout(next_layout=lambda: None, item=self.__default_layout)
+            self.__set_screen_layout(next_layout=None, item=self.__default_layout)
             return True
         else:
             return super().respond_to(command)
@@ -165,13 +167,13 @@ class ScreenLayoutCycleAction(OrderedDictCycleAction):
             layout_proc = subprocess.Popen([item])
             self.current = item
             if layout_proc.wait():
-                logger.warning('Screenlayout failed, continueing to next layout.')
-                next_layout()
+                if next_layout:
+                    logger.warning('Screenlayout failed, continueing to next layout.')
+                    next_layout()
         except Exception:
-            logger.exception('Screenlayout failed. Continueing to next layout')
-            next_layout()
-
-
+            if next_layout:
+                logger.exception('Screenlayout failed. Continueing to next layout')
+                next_layout()
 
     def __create_tk(self):
         options = list(self.__od.keys())[1:] # Skip the first option, it is the current one
@@ -180,15 +182,22 @@ class ScreenLayoutCycleAction(OrderedDictCycleAction):
         rows = math.ceil(num_options / cols)
         root = tkinter.Tk(className="screenlayout")
         root.update_idletasks()
-        width = root.winfo_screenwidth()//3
-        height = root.winfo_screenheight()//3
-        x = (root.winfo_screenwidth() // 2) - (width // 2)
-        y = (root.winfo_screenheight() // 2) - (height // 2)
+        screen_width = root.winfo_screenwidth()
+        screen_height = root.winfo_screenheight()
+        logger.debug("screen_width=%d; screen_height=%d", screen_width, screen_height)
+        width = screen_width//3
+        height = screen_height//3
+        x = (screen_width // 2) - (width // 2)
+        y = (screen_height // 2) - (height // 2)
+        logger.debug("geometry: width=%d, height=%d, x=%d, y=%d", width, height, x, y)
         root.geometry('{}x{}+{}+{}'.format(width, height, x, y))
         def create_callback(item):
             def cb():
                 self.__inhibited = False
-                self.__set_screen_layout(lambda: None, item)
+                current = self.current
+                def restore_current():
+                    self.__set_screen_layout(None, current)
+                self.__set_screen_layout(restore_current, item)
                 root.destroy()
             return cb
 
